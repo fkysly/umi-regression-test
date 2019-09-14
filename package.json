@@ -15,7 +15,7 @@
   },
   "main": "lib/index.js",
   "scripts": {
-    "start": "CURRENT_PROJECT=example umi ui",
+    "start": "DEBUG=*umi-plugin:*umi-regression-test* CURRENT_PROJECT=example umi ui",
     "build": "father-build",
     "prepublishOnly": "npm run build && np --no-cleanup --yolo --no-publish"
   },
@@ -23,7 +23,8 @@
     "father-build": "^1.8.0",
     "np": "^5.0.3",
     "umi": "^2.9.4",
-    "umi-types": "^0.4.0"
+    "umi-types": "^0.4.0",
+    "puppeteer": "^1.20.0"
   },
   "files": [
     "dist",
@@ -31,5 +32,8 @@
     "src",
     "ui"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "regenerator-runtime": "^0.13.3"
+  }
 }
