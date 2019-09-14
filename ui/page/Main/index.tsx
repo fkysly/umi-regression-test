@@ -11,11 +11,12 @@ interface IProps {
 const { useState } = React;
 
 const Welcome: React.FC<IProps> = ({ api }) => {
+  const [snapshots, setSnapshots] = useState([{ name: 'snapshot1' }]);
   const { callRemote, intl } = api;
 
   return (
     <div className={styles.container}>
-      <SideBar />
+      <SideBar snapshots={snapshots} />
 
       <div className={styles.content}></div>
     </div>
