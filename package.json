@@ -9,7 +9,9 @@
   "repository": "https://github.com/fkysly/umi-regression-test",
   "peerDependencies": {
     "antd": "4.x",
-    "umi": "2.x || ^2.9.0-0"
+    "umi": "2.x || ^2.9.0-0",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6"
   },
   "main": "lib/index.js",
   "scripts": {
@@ -20,8 +22,8 @@
   "devDependencies": {
     "father-build": "^1.8.0",
     "np": "^5.0.3",
-    "umi": "^2.9.0",
-    "umi-types": "^0.3.17"
+    "umi": "^2.9.4",
+    "umi-types": "^0.4.0"
   },
   "files": [
     "dist",

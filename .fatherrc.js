@@ -1,14 +1,15 @@
-
 export default [
   {
-    cjs: 'babel',
+    cjs: 'babel'
   },
   {
-    entry: 'ui/index.js',
+    entry: 'ui/index.tsx',
     umd: {
       name: 'umi-regression-test',
-      minFile: false,
+      minFile: false
     },
-  },
-
+    typescriptOpts: {
+      check: false
+    }
+  }
 ];
