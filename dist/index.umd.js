@@ -165,6 +165,7 @@
         setSnapshots = _useState2[1];
 
     var callRemote = api.callRemote,
+        notify = api.notify,
         intl = api.intl;
 
     var takeSnapshot =
@@ -173,30 +174,40 @@
       var _ref2 = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee() {
-        var result;
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                _context.next = 2;
+                _context.prev = 0;
+                _context.next = 3;
                 return callRemote({
-                  type: 'org.umi.plugin.umi-regression-test.takeSnapshot' // payload: {},
-                  // onProgress: async data => {
-                  //   // useState(data);
-                  // }
-
+                  type: 'org.umi.plugin.umi-regression-test.takeSnapshot'
                 });
 
-              case 2:
-                result = _context.sent;
-                alert(JSON.stringify(result));
+              case 3:
+                notify({
+                  title: '拍照成功',
+                  message: '',
+                  type: 'success'
+                });
+                _context.next = 9;
+                break;
 
-              case 4:
+              case 6:
+                _context.prev = 6;
+                _context.t0 = _context["catch"](0);
+                notify({
+                  title: '拍照失败',
+                  message: '请确保已启动开发服务器',
+                  type: 'error'
+                });
+
+              case 9:
               case "end":
                 return _context.stop();
             }
           }
-        }, _callee);
+        }, _callee, null, [[0, 6]]);
       }));
 
       return function takeSnapshot() {
