@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('react')) :
-  typeof define === 'function' && define.amd ? define(['react'], factory) :
-  (global = global || self, global['umi-regression-test'] = factory(global.React));
-}(this, function (React) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('react'), require('antd')) :
+  typeof define === 'function' && define.amd ? define(['react', 'antd'], factory) :
+  (global = global || self, global['umi-regression-test'] = factory(global.React, global.antd));
+}(this, function (React, antd) { 'use strict';
 
   React = React && React.hasOwnProperty('default') ? React['default'] : React;
 
@@ -19,6 +19,42 @@
   	"urt.welcome.button.init": "init",
   	"urt.welcome.button.genarate": "genarate"
   };
+
+  function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+    try {
+      var info = gen[key](arg);
+      var value = info.value;
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
+    if (info.done) {
+      resolve(value);
+    } else {
+      Promise.resolve(value).then(_next, _throw);
+    }
+  }
+
+  function _asyncToGenerator(fn) {
+    return function () {
+      var self = this,
+          args = arguments;
+      return new Promise(function (resolve, reject) {
+        var gen = fn.apply(self, args);
+
+        function _next(value) {
+          asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
+        }
+
+        function _throw(err) {
+          asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
+        }
+
+        _next(undefined);
+      });
+    };
+  }
 
   function _slicedToArray(arr, i) {
     return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
@@ -95,12 +131,17 @@
 
   var SideBar = function SideBar(props) {
     var _props$snapshots = props.snapshots,
-        snapshots = _props$snapshots === void 0 ? [] : _props$snapshots;
+        snapshots = _props$snapshots === void 0 ? [] : _props$snapshots,
+        takeSnapshot = props.takeSnapshot;
     return React.createElement("div", {
       className: styles.sidebar
     }, React.createElement("div", {
       className: styles.toolbar
-    }), React.createElement("div", {
+    }, React.createElement(antd.Button, {
+      type: "primary",
+      size: "small",
+      onClick: takeSnapshot
+    }, "\u62CD\u5FEB\u7167")), React.createElement("div", {
       className: styles.profiles
     }, React.createElement("p", {
       className: styles.profilesTitle
@@ -118,19 +159,56 @@
   var Welcome = function Welcome(_ref) {
     var api = _ref.api;
 
-    var _useState = useState([{
-      name: 'snapshot1'
-    }]),
+    var _useState = useState([]),
         _useState2 = _slicedToArray(_useState, 2),
         snapshots = _useState2[0],
         setSnapshots = _useState2[1];
 
     var callRemote = api.callRemote,
         intl = api.intl;
+
+    var takeSnapshot =
+    /*#__PURE__*/
+    function () {
+      var _ref2 = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee() {
+        var result;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _context.next = 2;
+                return callRemote({
+                  type: 'org.umi.plugin.umi-regression-test.takeSnapshot' // payload: {},
+                  // onProgress: async data => {
+                  //   // useState(data);
+                  // }
+
+                });
+
+              case 2:
+                result = _context.sent;
+                alert(JSON.stringify(result));
+
+              case 4:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+
+      return function takeSnapshot() {
+        return _ref2.apply(this, arguments);
+      };
+    }();
+
     return React.createElement("div", {
       className: styles$1.container
     }, React.createElement(SideBar, {
-      snapshots: snapshots
+      snapshots: snapshots,
+      takeSnapshot: takeSnapshot
     }), React.createElement("div", {
       className: styles$1.content
     }));

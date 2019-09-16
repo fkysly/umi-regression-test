@@ -34,18 +34,21 @@ const genPath = async (route, devServerUrl) => {
   };
 };
 
+let devServerUrl = 'http://localhost:8000';
+
 export default function(api, options) {
-  api.afterDevServer(({ serve, devServerPort }) => {
-    const devServerUrl = `${config.devServerHost}:${devServerPort}`;
-    screenshot(api.routes[0], devServerUrl);
-  });
+  // api.afterDevServer(({ serve, devServerPort }) => {
+  //   devServerUrl = `${config.devServerHost}:${devServerPort}`;
+  // });
 
   api.addUIPlugin(require.resolve('../dist/index.umd'));
 
-  api.onUISocket(({ action, failure, success }) => {
-    if (action.type === 'org.Tianyi Ma.umi-regression-test.test') {
+  api.onUISocket(async ({ action, failure, success }) => {
+    if (action.type === 'org.umi.plugin.umi-regression-test.takeSnapshot') {
+      // api.debug('123');
+      await screenshot({ path: '/' }, devServerUrl);
       success({
-        data: 'umi-regression-test.test'
+        data: 'success'
       });
     }
   });

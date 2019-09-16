@@ -11,7 +11,7 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "suppressImplicitAnyIndexErrors": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "experimentalDecorators": true,
     "declaration": false,
     "resolveJsonModule": true,
