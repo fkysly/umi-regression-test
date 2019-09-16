@@ -186,10 +186,12 @@
     var _props$snapshots = props.snapshots,
         snapshots = _props$snapshots === void 0 ? [] : _props$snapshots,
         takeSnapshot = props.takeSnapshot,
-        _props$takingSnapshot = props.takingSnapshot,
-        takingSnapshot = _props$takingSnapshot === void 0 ? false : _props$takingSnapshot,
+        takingSnapshot = props.takingSnapshot,
         activeSnapshotIndex = props.activeSnapshotIndex,
-        setActiveSnapshotIndex = props.setActiveSnapshotIndex;
+        setActiveSnapshotIndex = props.setActiveSnapshotIndex,
+        baseSnapshotId = props.baseSnapshotId,
+        diffSnapshot = props.diffSnapshot,
+        isDiffing = props.isDiffing;
     var activeSnapshot = snapshots[activeSnapshotIndex];
     return React__default.createElement("div", {
       className: styles.sidebar
@@ -200,7 +202,17 @@
       size: "small",
       onClick: takeSnapshot,
       loading: takingSnapshot
-    }, "\u62CD\u7167")), React__default.createElement("div", {
+    }, "\u62CD\u7167"), React__default.createElement(antd.Button, {
+      style: {
+        marginLeft: 8
+      },
+      type: "default",
+      size: "small",
+      onClick: function onClick() {
+        return diffSnapshot(snapshots[activeSnapshotIndex].id);
+      },
+      loading: isDiffing
+    }, "\u5BF9\u6BD4")), React__default.createElement("div", {
       className: styles.profiles
     }, React__default.createElement("p", {
       className: styles.profilesTitle
@@ -214,7 +226,7 @@
         onClick: function onClick() {
           return setActiveSnapshotIndex(index);
         }
-      }, React__default.createElement("p", null, "\u5FEB\u7167 ", snapshot.id));
+      }, React__default.createElement("p", null, "\u5FEB\u7167 ", snapshot.id, baseSnapshotId === snapshot.id ? ' *' : null));
     })));
   };
 
@@ -235,15 +247,25 @@
         snapshots = _useState2[0],
         setSnapshots = _useState2[1];
 
-    var _useState3 = useState(0),
+    var _useState3 = useState('0'),
         _useState4 = _slicedToArray(_useState3, 2),
-        activeSnapshotIndex = _useState4[0],
-        setActiveSnapshotIndex = _useState4[1];
+        baseSnapshotId = _useState4[0],
+        setBaseSnapshotId = _useState4[1];
 
-    var _useState5 = useState(false),
+    var _useState5 = useState(0),
         _useState6 = _slicedToArray(_useState5, 2),
-        takingSnapshot = _useState6[0],
-        setTakingSnapShot = _useState6[1];
+        activeSnapshotIndex = _useState6[0],
+        setActiveSnapshotIndex = _useState6[1];
+
+    var _useState7 = useState(false),
+        _useState8 = _slicedToArray(_useState7, 2),
+        takingSnapshot = _useState8[0],
+        setTakingSnapShot = _useState8[1];
+
+    var _useState9 = useState(false),
+        _useState10 = _slicedToArray(_useState9, 2),
+        isDiffing = _useState10[0],
+        setIsDiffing = _useState10[1];
 
     var getSnapshots =
     /*#__PURE__*/
@@ -292,7 +314,55 @@
       };
     }();
 
+    var getBaseSnapshotId =
+    /*#__PURE__*/
+    function () {
+      var _ref4 = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee2() {
+        var _ref5, _baseSnapshotId;
+
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                _context2.prev = 0;
+                _context2.next = 3;
+                return callRemote({
+                  type: 'org.umi.plugin.umi-regression-test.getBaseSnapshotId'
+                });
+
+              case 3:
+                _ref5 = _context2.sent;
+                _baseSnapshotId = _ref5.baseSnapshotId;
+                setBaseSnapshotId(_baseSnapshotId);
+                _context2.next = 11;
+                break;
+
+              case 8:
+                _context2.prev = 8;
+                _context2.t0 = _context2["catch"](0);
+                notify({
+                  title: '获取基准快照',
+                  message: "",
+                  type: 'error'
+                });
+
+              case 11:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, null, [[0, 8]]);
+      }));
+
+      return function getBaseSnapshotId() {
+        return _ref4.apply(this, arguments);
+      };
+    }();
+
     React.useEffect(function () {
+      getBaseSnapshotId();
       getSnapshots();
     }, []);
 
@@ -303,37 +373,37 @@
     var takeSnapshot =
     /*#__PURE__*/
     function () {
-      var _ref4 = _asyncToGenerator(
+      var _ref6 = _asyncToGenerator(
       /*#__PURE__*/
-      regeneratorRuntime.mark(function _callee2() {
-        var _ref5, snapshot;
+      regeneratorRuntime.mark(function _callee3() {
+        var _ref7, snapshot;
 
-        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
-            switch (_context2.prev = _context2.next) {
+            switch (_context3.prev = _context3.next) {
               case 0:
-                _context2.prev = 0;
+                _context3.prev = 0;
                 setTakingSnapShot(true);
-                _context2.next = 4;
+                _context3.next = 4;
                 return callRemote({
                   type: 'org.umi.plugin.umi-regression-test.takeSnapshot'
                 });
 
               case 4:
-                _ref5 = _context2.sent;
-                snapshot = _ref5.snapshot;
+                _ref7 = _context3.sent;
+                snapshot = _ref7.snapshot;
                 addSnapshot(snapshot);
                 notify({
                   title: '拍照成功',
-                  message: "",
+                  message: "\u5DF2\u751F\u6210\u5FEB\u7167".concat(snapshot.id),
                   type: 'success'
                 });
-                _context2.next = 13;
+                _context3.next = 13;
                 break;
 
               case 10:
-                _context2.prev = 10;
-                _context2.t0 = _context2["catch"](0);
+                _context3.prev = 10;
+                _context3.t0 = _context3["catch"](0);
                 notify({
                   title: '拍照失败',
                   message: "\u8BF7\u786E\u4FDD\u5DF2\u542F\u52A8\u5F00\u53D1\u670D\u52A1\u5668",
@@ -341,20 +411,76 @@
                 });
 
               case 13:
-                _context2.prev = 13;
+                _context3.prev = 13;
                 setTakingSnapShot(false);
-                return _context2.finish(13);
+                return _context3.finish(13);
 
               case 16:
               case "end":
-                return _context2.stop();
+                return _context3.stop();
             }
           }
-        }, _callee2, null, [[0, 10, 13, 16]]);
+        }, _callee3, null, [[0, 10, 13, 16]]);
       }));
 
       return function takeSnapshot() {
-        return _ref4.apply(this, arguments);
+        return _ref6.apply(this, arguments);
+      };
+    }();
+
+    var diffSnapshot =
+    /*#__PURE__*/
+    function () {
+      var _ref8 = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee4(snapshotId) {
+        return regeneratorRuntime.wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                _context4.prev = 0;
+                setIsDiffing(true);
+                _context4.next = 4;
+                return callRemote({
+                  type: 'org.umi.plugin.umi-regression-test.diffSnapshot',
+                  payload: {
+                    snapshotId: snapshotId
+                  }
+                });
+
+              case 4:
+                notify({
+                  title: '对比成功',
+                  message: "\u57FA\u51C6\u5FEB\u7167".concat(baseSnapshotId, " - \u5BF9\u6BD4\u5FEB\u7167").concat(snapshotId),
+                  type: 'success'
+                });
+                _context4.next = 10;
+                break;
+
+              case 7:
+                _context4.prev = 7;
+                _context4.t0 = _context4["catch"](0);
+                notify({
+                  title: '对比失败',
+                  message: "",
+                  type: 'error'
+                });
+
+              case 10:
+                _context4.prev = 10;
+                setIsDiffing(false);
+                return _context4.finish(10);
+
+              case 13:
+              case "end":
+                return _context4.stop();
+            }
+          }
+        }, _callee4, null, [[0, 7, 10, 13]]);
+      }));
+
+      return function diffSnapshot(_x) {
+        return _ref8.apply(this, arguments);
       };
     }();
 
@@ -365,7 +491,10 @@
       takeSnapshot: takeSnapshot,
       takingSnapshot: takingSnapshot,
       activeSnapshotIndex: activeSnapshotIndex,
-      setActiveSnapshotIndex: setActiveSnapshotIndex
+      setActiveSnapshotIndex: setActiveSnapshotIndex,
+      baseSnapshotId: baseSnapshotId,
+      diffSnapshot: diffSnapshot,
+      isDiffing: isDiffing
     }), React__default.createElement("div", {
       className: styles$1.content
     }));
@@ -379,7 +508,7 @@
       'en-US': en
     });
     addPanel({
-      title: '回归测试',
+      title: '视觉感知测试',
       path: '/umi-regression-test',
       icon: 'rest',
       component: function component() {

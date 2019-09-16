@@ -10,15 +10,21 @@ interface IProps {
   takingSnapshot: boolean;
   activeSnapshotIndex: number;
   setActiveSnapshotIndex: (index: number) => void;
+  baseSnapshotId: string;
+  diffSnapshot: (snapshotId) => void;
+  isDiffing: boolean;
 }
 
 const SideBar: React.FC<IProps> = props => {
   const {
     snapshots = [],
     takeSnapshot,
-    takingSnapshot = false,
+    takingSnapshot,
     activeSnapshotIndex,
-    setActiveSnapshotIndex
+    setActiveSnapshotIndex,
+    baseSnapshotId,
+    diffSnapshot,
+    isDiffing
   } = props;
   const activeSnapshot = snapshots[activeSnapshotIndex];
   return (
@@ -31,6 +37,15 @@ const SideBar: React.FC<IProps> = props => {
           loading={takingSnapshot}
         >
           拍照
+        </Button>
+        <Button
+          style={{ marginLeft: 8 }}
+          type="default"
+          size="small"
+          onClick={() => diffSnapshot(snapshots[activeSnapshotIndex].id)}
+          loading={isDiffing}
+        >
+          对比
         </Button>
       </div>
       <div className={styles.profiles}>
@@ -46,7 +61,10 @@ const SideBar: React.FC<IProps> = props => {
               key={snapshot.id}
               onClick={() => setActiveSnapshotIndex(index)}
             >
-              <p>快照 {snapshot.id}</p>
+              <p>
+                快照 {snapshot.id}
+                {baseSnapshotId === snapshot.id ? ' *' : null}
+              </p>
             </div>
           );
         })}

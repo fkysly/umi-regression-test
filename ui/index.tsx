@@ -10,7 +10,7 @@ export default (api: IUiApi) => {
   addLocales({ 'zh-CN': zh, 'en-US': en });
 
   addPanel({
-    title: '回归测试', // TODO: 国际化
+    title: '视觉感知测试', // TODO: 国际化
     path: '/umi-regression-test',
     icon: 'rest',
     component: () => <Main api={api} />
