@@ -11,15 +11,21 @@ Configure in `.umirc.js`,
 
 ```js
 export default {
-  plugins: [
-    ['umi-plugin-umi-regression-test', options],
-  ],
-}
+  plugins: [['umi-plugin-umi-regression-test', options]]
+};
 ```
 
 ## Options
 
 TODO
+
+## Dev
+
+```bash
+yarn build --watch
+cd example
+umi uitest
+```
 
 ## LICENSE
 
