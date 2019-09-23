@@ -24,7 +24,6 @@ const runDevServer = (opts = {}): Promise<string> => {
 const killDevServer = () => {
   if (devServer !== null) {
     devServer.kill('SIGINT');
-    console.log(devServer.killed);
     devServer = null;
   }
 };

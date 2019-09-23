@@ -1,26 +1,54 @@
+import path from 'path';
+import fs from 'fs';
+import Service from 'umi-build-dev/lib/Service';
 import SnapshotManager from '../src/SnapshotManager';
 import { runDevServer, killDevServer } from '../src/util/devServer';
-import path from 'path';
+import { clearDir } from '../src/util/helper';
 
 describe('test SnapshotManager', () => {
   let snapshotManager;
   let devServerUrl;
+  let urtDir;
+  let routes;
+  let service;
 
   beforeAll(async () => {
     jest.setTimeout(30000);
+    const cwd = path.join(__dirname, '../example');
     devServerUrl = await runDevServer({
-      cwd: path.join(__dirname, '../example')
+      cwd
     });
+    urtDir = path.join(__dirname, '.urtImages');
+    service = new Service({ cwd });
+    service.init();
+    routes = service.getRoutes();
+    console.log(routes);
   });
 
   beforeEach(() => {
-    const urtDir = path.join(__dirname, '.urtImages');
-    snapshotManager = new SnapshotManager(devServerUrl, urtDir);
+    snapshotManager = new SnapshotManager(devServerUrl, urtDir, routes);
   });
 
   test('takeSnapshot', async () => {
     const snapshot = await snapshotManager.takeSnapshot();
-    expect(snapshot).toBeNull();
+    expect(snapshot.id).toBe(0);
+    const snapshots = snapshotManager.getSnapshots();
+    const latestSnapshot = snapshots[snapshots.length - 1];
+    expect(snapshot).toEqual(latestSnapshot);
+  });
+
+  test('createSnapshotDir', async () => {
+    const snapshot = {
+      id: 123123
+    };
+    await snapshotManager.createSnapshotDir(snapshot);
+    const snapshotDir = `${urtDir}/${snapshot.id}`;
+    let isDir = false;
+    try {
+      isDir = fs.lstatSync(snapshotDir).isDirectory();
+    } catch (e) {}
+
+    expect(isDir).toBeTruthy();
   });
 
   test('diffSnapshot', async () => {
@@ -36,5 +64,9 @@ describe('test SnapshotManager', () => {
     const snapshot2 = await snapshotManager.takeSnapshot();
     const report = await snapshotManager.diffSnapshotWithBase(snapshot2);
     expect(report).toBe('report');
+  });
+
+  afterEach(async () => {
+    await clearDir(snapshotManager.getUrtDir());
   });
 });
