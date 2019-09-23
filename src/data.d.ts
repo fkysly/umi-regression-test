@@ -1,10 +1,18 @@
+export interface Report {
+  isPass: boolean;
+  diffImagePath: string;
+  routePath: string;
+  differences: number;
+  dimension: number;
+}
+
 export interface ConfObj {
   baselineSnapshotId: number;
   snapshotIds: number[];
 }
 
 export interface Screenshot {
-  pagePath: string;
+  routePath: string;
   imageName: string;
 }
 

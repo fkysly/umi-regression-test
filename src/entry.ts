@@ -2,6 +2,7 @@ import { IApi } from 'umi-types';
 import { runDevServer, killDevServer } from './util/devServer';
 import config from './config';
 import SnapshotManager from './SnapshotManager';
+import { genarateFormatReport } from './report';
 
 const entry = async (api: IApi) => {
   api.log.info('正在初始化...');
@@ -23,8 +24,8 @@ const entry = async (api: IApi) => {
   const snapshot = await snapshotManager.takeSnapshot();
 
   api.log.info('正在生成测试结果...');
-  const report = await snapshotManager.diffSnapshotWithBaseline(snapshot);
-  console.log(report);
+  const reports = await snapshotManager.diffSnapshotWithBaseline(snapshot);
+  console.log(genarateFormatReport(reports));
 
   await killDevServer();
 };

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import BlinkDiff from 'blink-diff';
 import { IRoute } from 'umi-types';
-import { Snapshot, ConfObj } from './data';
+import { Snapshot, ConfObj, Report } from './data';
 import { takeScreenshot, genImageName } from './screenshot';
 import {
   readJSONFile,
@@ -41,8 +41,9 @@ export default class SnapshotManager {
     return this._baselineSnapshot;
   }
 
-  setBaselineSnapshot(snapshot: Snapshot) {
+  async setBaselineSnapshot(snapshot: Snapshot) {
     this._baselineSnapshot = snapshot;
+    await this.writeBaselineSnapshotId();
   }
 
   getSnapshots(): Snapshot[] {
@@ -84,8 +85,7 @@ export default class SnapshotManager {
     await this.writeSnapshot(snapshotDir, snapshot);
 
     if (this._snapshots.length === 0) {
-      this._baselineSnapshot = snapshot;
-      await this.writeBaselineSnapshotId();
+      await this.setBaselineSnapshot(snapshot);
     }
 
     await this.addSnapshot(snapshot);
@@ -180,47 +180,70 @@ export default class SnapshotManager {
 
   async diffSnapshot(
     sourceSnapshot: Snapshot,
-    targetSnapshot: Snapshot
-  ): Promise<string> {
+    targetSnapshot: Snapshot,
+    updateBaselineSnapshot: boolean = false
+  ): Promise<Report[]> {
     await this.clearDiffOutputDir();
     const diffOutputDir = await this.createDiffOutputDir();
+    const { screenshots } = sourceSnapshot;
 
-    const imageNames = sourceSnapshot.screenshots.map(
-      screenshot => screenshot.imageName
-    );
-
-    const tasks = imageNames.map(imageName => {
+    const tasks = screenshots.map(screenshot => {
+      const { imageName, routePath } = screenshot;
       const sourceImagePath = `${this._urtDir}/${sourceSnapshot.id}/${imageName}`;
       const targetImagePath = `${this._urtDir}/${targetSnapshot.id}/${imageName}`;
-      console.log(sourceImagePath, targetImagePath);
-      return new BlinkDiff({
+      const diffImagePath = `${diffOutputDir}/${imageName}`;
+
+      const diff = new BlinkDiff({
         imageAPath: sourceImagePath,
         imageBPath: targetImagePath,
-        thresholdType: BlinkDiff.THRESHOLD_PERCENT,
-        threshold: 0.01, // 1% threshold
-        imageOutputPath: `${diffOutputDir}/${imageName}`
+        thresholdType: BlinkDiff.THRESHOLD_PIXEL,
+        threshold: 0,
+        imageOutputPath: diffImagePath
       });
+      return {
+        diff,
+        diffImagePath,
+        routePath
+      };
     });
 
-    await Promise.all(
+    const reports = <Report[]>await Promise.all(
       tasks.map(
-        async task =>
-          await new Promise((resolve, reject) =>
-            task.run((err, result) => {
+        task =>
+          new Promise((resolve, reject) => {
+            const { diff, diffImagePath, routePath } = task;
+            diff.run((err, result) => {
               if (err) {
                 reject(err);
               }
-              resolve(result);
-            })
-          )
+              const isPass = diff.hasPassed(result.code);
+              const { differences, dimension } = result;
+              resolve({
+                isPass,
+                diffImagePath,
+                routePath,
+                differences,
+                dimension
+              });
+            });
+          })
       )
     );
 
-    return 'report';
+    if (updateBaselineSnapshot) {
+      await this.setBaselineSnapshot(targetSnapshot);
+    }
+
+    return reports;
   }
 
-  async diffSnapshotWithBaseline(target: Snapshot): Promise<string> {
-    const report = await this.diffSnapshot(this._baselineSnapshot, target);
-    return report;
+  async diffSnapshotWithBaseline(targetSnapshot: Snapshot): Promise<Report[]> {
+    const reports = await this.diffSnapshot(
+      this._baselineSnapshot,
+      targetSnapshot,
+      true
+    );
+
+    return reports;
   }
 }
