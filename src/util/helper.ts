@@ -3,6 +3,17 @@ import fs from 'fs';
 
 const isBigfishProject = !!process.env.BIGFISH_COMPAT;
 
+const mkDirRecursive = (dir: string) => {
+  return new Promise((resolve, reject) => {
+    fs.mkdir(dir, { recursive: true }, err => {
+      if (err) {
+        reject(err);
+      }
+      resolve(dir);
+    });
+  });
+};
+
 const clearDir = (dir: string) => {
   return new Promise((resolve, reject) => {
     rimraf(dir, {}, () => {
@@ -22,4 +33,19 @@ const readJSONFile = (filePath: string): Promise<Object> => {
   });
 };
 
-export { isBigfishProject, clearDir, readJSONFile };
+const writeJSONFile = (filePath: string, str: string) => {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(filePath, str, 'utf8', err => {
+      if (err) reject(err);
+      resolve();
+    });
+  });
+};
+
+export {
+  isBigfishProject,
+  clearDir,
+  readJSONFile,
+  mkDirRecursive,
+  writeJSONFile
+};

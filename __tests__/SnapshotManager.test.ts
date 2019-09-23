@@ -60,9 +60,9 @@ describe('test SnapshotManager', () => {
 
   test('diffSnapshotWithBase', async () => {
     const snapshot = await snapshotManager.takeSnapshot();
-    snapshotManager.setBaseSnapshot(snapshot);
+    snapshotManager.setBaselineSnapshot(snapshot);
     const snapshot2 = await snapshotManager.takeSnapshot();
-    const report = await snapshotManager.diffSnapshotWithBase(snapshot2);
+    const report = await snapshotManager.diffSnapshotWithBaseline(snapshot2);
     expect(report).toBe('report');
   });
 

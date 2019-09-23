@@ -23,7 +23,7 @@ const entry = async (api: IApi) => {
   const snapshot = await snapshotManager.takeSnapshot();
 
   api.log.info('正在生成测试结果...');
-  const report = await snapshotManager.diffSnapshotWithBase(snapshot);
+  const report = await snapshotManager.diffSnapshotWithBaseline(snapshot);
   console.log(report);
 
   await killDevServer();

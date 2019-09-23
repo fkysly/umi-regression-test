@@ -1,5 +1,6 @@
-export interface BaseSnapshotIdObj {
-  baseSnapshotId: string;
+export interface ConfObj {
+  baselineSnapshotId: number;
+  snapshotIds: number[];
 }
 
 export interface Screenshot {

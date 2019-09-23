@@ -1,22 +1,32 @@
 import fs from 'fs';
-import rimraf from 'rimraf';
+import BlinkDiff from 'blink-diff';
 import { IRoute } from 'umi-types';
-import { Snapshot, BaseSnapshotIdObj } from './data';
+import { Snapshot, ConfObj } from './data';
 import { takeScreenshot, genImageName } from './screenshot';
-import { readJSONFile } from './util/helper';
+import {
+  readJSONFile,
+  clearDir,
+  mkDirRecursive,
+  writeJSONFile
+} from './util/helper';
 
 export default class SnapshotManager {
   private _devServerUrl: string;
   private _urtDir: string;
-  private _baseSnapshot?: Snapshot;
+  private _baselineSnapshot?: Snapshot;
   private _snapshots: Snapshot[];
   private _routes: IRoute[];
+  private _conf: ConfObj;
 
   constructor(devServerUrl: string, urtDir: string, routes: IRoute[]) {
     this._devServerUrl = devServerUrl;
     this._urtDir = urtDir;
     this._snapshots = [];
     this._routes = routes;
+    this._conf = {
+      baselineSnapshotId: 0,
+      snapshotIds: []
+    };
   }
 
   setRoutes(routes: IRoute[]) {
@@ -27,12 +37,12 @@ export default class SnapshotManager {
     return this._urtDir;
   }
 
-  getBaseSnapshot(): Snapshot | undefined {
-    return this._baseSnapshot;
+  getBaselineSnapshot(): Snapshot | undefined {
+    return this._baselineSnapshot;
   }
 
-  setBaseSnapshot(snapshot: Snapshot) {
-    this._baseSnapshot = snapshot;
+  setBaselineSnapshot(snapshot: Snapshot) {
+    this._baselineSnapshot = snapshot;
   }
 
   getSnapshots(): Snapshot[] {
@@ -74,51 +84,59 @@ export default class SnapshotManager {
     await this.writeSnapshot(snapshotDir, snapshot);
 
     if (this._snapshots.length === 0) {
-      this._baseSnapshot = snapshot;
-      await this.writeBaseSnapshotId();
+      this._baselineSnapshot = snapshot;
+      await this.writeBaselineSnapshotId();
     }
 
-    this._snapshots.push(snapshot);
+    await this.addSnapshot(snapshot);
 
     return snapshot;
   }
 
-  async readBaseSnapshotId(): Promise<number> {
+  async addSnapshot(snapshot: Snapshot) {
+    this._snapshots.push(snapshot);
+
+    this._conf.snapshotIds = this._snapshots.map(snapshot => snapshot.id);
+    const str = JSON.stringify(this._conf);
+
     const filePath = `${this._urtDir}/conf.json`;
-    const json = <BaseSnapshotIdObj>await readJSONFile(filePath);
-    return parseInt(json.baseSnapshotId, 10);
+    await writeJSONFile(filePath, str);
   }
 
-  writeBaseSnapshotId() {
-    return new Promise((resolve, reject) => {
-      const str = JSON.stringify({
-        baseSnapshotId: this._baseSnapshot.id
-      });
-      fs.writeFile(`${this._urtDir}/conf.json`, str, 'utf8', err => {
-        if (err) reject(err);
-        resolve();
-      });
-    });
+  async readConf(): Promise<ConfObj> {
+    const filePath = `${this._urtDir}/conf.json`;
+    const json = <ConfObj>await readJSONFile(filePath);
+    return json;
+  }
+
+  async writeBaselineSnapshotId() {
+    this._conf.baselineSnapshotId = this._baselineSnapshot.id;
+    const str = JSON.stringify(this._conf);
+    const filePath = `${this._urtDir}/conf.json`;
+    await writeJSONFile(filePath, str);
   }
 
   async readLocalSnapshots() {
     try {
       if (fs.lstatSync(this._urtDir).isDirectory()) {
+        const { baselineSnapshotId, snapshotIds } = await this.readConf();
+
         await Promise.all(
           fs.readdirSync(this._urtDir).map(async file => {
             const snapshotDir = `${this._urtDir}/${file}`;
-            if (fs.lstatSync(snapshotDir).isDirectory()) {
+            const result = snapshotIds.filter(id => `${id}` === file);
+            if (result && result.length > 0) {
               const snapshot = await this.readSnapshot(snapshotDir);
               this._snapshots.push(snapshot);
             }
           })
         );
-        const baseSnapshotId = await this.readBaseSnapshotId();
+
         const bases = this._snapshots.filter(
-          snapshot => snapshot.id === baseSnapshotId
+          snapshot => snapshot.id === baselineSnapshotId
         );
         if (bases && bases.length > 0) {
-          this._baseSnapshot = bases[0];
+          this._baselineSnapshot = bases[0];
         }
       }
     } catch (e) {
@@ -132,44 +150,77 @@ export default class SnapshotManager {
     return snapshot;
   }
 
-  writeSnapshot(snapshotDir: string, snapshot: Snapshot) {
-    return new Promise((resolve, reject) => {
-      const str = JSON.stringify(snapshot);
-      fs.writeFile(`${snapshotDir}/snapshotInfo.json`, str, 'utf8', err => {
-        if (err) reject(err);
-        resolve();
-      });
-    });
+  async writeSnapshot(snapshotDir: string, snapshot: Snapshot) {
+    const str = JSON.stringify(snapshot);
+    const filePath = `${snapshotDir}/snapshotInfo.json`;
+    await writeJSONFile(filePath, str);
   }
 
-  createSnapshotDir(snapshot: Snapshot): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const snapshotDir = `${this._urtDir}/${snapshot.id}`;
-      fs.mkdir(snapshotDir, { recursive: true }, err => {
-        if (err) {
-          reject(err);
-        }
-
-        resolve(snapshotDir);
-      });
-    });
+  async createSnapshotDir(snapshot: Snapshot): Promise<string> {
+    const snapshotDir = `${this._urtDir}/${snapshot.id}`;
+    await mkDirRecursive(snapshotDir);
+    return snapshotDir;
   }
 
-  clearSnapshotDir(snapshot: Snapshot) {
-    return new Promise((resolve, reject) => {
-      const snapshotDir = `${this._urtDir}/${snapshot.id}`;
-      rimraf(snapshotDir, {}, () => {
-        resolve();
-      });
-    });
+  async createDiffOutputDir(): Promise<string> {
+    const diffOutputDir = `${this._urtDir}/diff`;
+    await mkDirRecursive(diffOutputDir);
+    return diffOutputDir;
   }
 
-  async diffSnapshot(source: Snapshot, target: Snapshot): Promise<string> {
+  async clearSnapshotDir(snapshot: Snapshot) {
+    const snapshotDir = `${this._urtDir}/${snapshot.id}`;
+    await clearDir(snapshotDir);
+  }
+
+  async clearDiffOutputDir() {
+    const diffOutputDir = `${this._urtDir}/diff`;
+    await clearDir(diffOutputDir);
+  }
+
+  async diffSnapshot(
+    sourceSnapshot: Snapshot,
+    targetSnapshot: Snapshot
+  ): Promise<string> {
+    await this.clearDiffOutputDir();
+    const diffOutputDir = await this.createDiffOutputDir();
+
+    const imageNames = sourceSnapshot.screenshots.map(
+      screenshot => screenshot.imageName
+    );
+
+    const tasks = imageNames.map(imageName => {
+      const sourceImagePath = `${this._urtDir}/${sourceSnapshot.id}/${imageName}`;
+      const targetImagePath = `${this._urtDir}/${targetSnapshot.id}/${imageName}`;
+      console.log(sourceImagePath, targetImagePath);
+      return new BlinkDiff({
+        imageAPath: sourceImagePath,
+        imageBPath: targetImagePath,
+        thresholdType: BlinkDiff.THRESHOLD_PERCENT,
+        threshold: 0.01, // 1% threshold
+        imageOutputPath: `${diffOutputDir}/${imageName}`
+      });
+    });
+
+    await Promise.all(
+      tasks.map(
+        async task =>
+          await new Promise((resolve, reject) =>
+            task.run((err, result) => {
+              if (err) {
+                reject(err);
+              }
+              resolve(result);
+            })
+          )
+      )
+    );
+
     return 'report';
   }
 
-  async diffSnapshotWithBase(target: Snapshot): Promise<string> {
-    const report = await this.diffSnapshot(this._baseSnapshot, target);
+  async diffSnapshotWithBaseline(target: Snapshot): Promise<string> {
+    const report = await this.diffSnapshot(this._baselineSnapshot, target);
     return report;
   }
 }
