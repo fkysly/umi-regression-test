@@ -51,6 +51,10 @@ export default class SnapshotManager {
   async setBaselineSnapshot(snapshot: Snapshot) {
     this._baselineSnapshot = snapshot;
     await this.writeBaselineSnapshotId();
+    const beforeIds = [...Array(this._baselineSnapshot.id).keys()];
+    await Promise.all(
+      beforeIds.map(async id => await this.clearSnapshotDir(id))
+    );
   }
 
   getSnapshots(): Snapshot[] {
@@ -61,12 +65,24 @@ export default class SnapshotManager {
     return this._snapshots.length;
   }
 
+  getMaxSnapshotId(): number {
+    const ids = this._snapshots.map(snapshot => snapshot.id);
+    if (ids.length === 0) {
+      return -1;
+    }
+    return Math.max(...ids);
+  }
+
   async takeSnapshot(): Promise<Snapshot> {
-    const snapshotCount = this.getSnapshotsCount();
+    const snapshotMaxId = this.getMaxSnapshotId();
     const snapshot = {
-      id: snapshotCount,
+      id: snapshotMaxId,
       screenshots: []
     };
+    const needAddSnapshot = this._baselineSnapshot.id === snapshotMaxId;
+    if (needAddSnapshot) {
+      snapshot.id = snapshotMaxId + 1;
+    }
 
     let snapshotDir = '';
     try {
@@ -91,7 +107,9 @@ export default class SnapshotManager {
 
     await this.writeSnapshotInfo(snapshotDir, snapshot);
 
-    await this.addSnapshot(snapshot);
+    if (needAddSnapshot) {
+      await this.addSnapshot(snapshot);
+    }
 
     return snapshot;
   }
@@ -122,7 +140,8 @@ export default class SnapshotManager {
   async readLocalSnapshots() {
     try {
       if (fs.lstatSync(this._urtDir).isDirectory()) {
-        const { baselineSnapshotId, snapshotIds } = await this.readConf();
+        this._conf = await this.readConf();
+        const { baselineSnapshotId, snapshotIds } = this._conf;
 
         await Promise.all(
           fs.readdirSync(this._urtDir).map(async file => {
@@ -171,8 +190,8 @@ export default class SnapshotManager {
     return diffOutputDir;
   }
 
-  async clearSnapshotDir(snapshot: Snapshot) {
-    const snapshotDir = `${this._urtDir}/${snapshot.id}`;
+  async clearSnapshotDir(snapshotId: number) {
+    const snapshotDir = `${this._urtDir}/${snapshotId}`;
     await clearDir(snapshotDir);
   }
 
