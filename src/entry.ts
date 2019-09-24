@@ -2,9 +2,13 @@ import { IApi } from 'umi-types';
 import { runDevServer, killDevServer } from './util/devServer';
 import config from './config';
 import SnapshotManager from './SnapshotManager';
-import { genarateFormatReport } from './report';
+import { formatReport } from './report';
 
-const entry = async (api: IApi) => {
+interface Args {
+  update: boolean;
+}
+
+const entry = async (api: IApi, args: Args) => {
   api.log.info('正在初始化...');
   const devServerUrl = await runDevServer(); // 不打开浏览器
   const urtDir = `${api.paths.cwd}/${config.urtDirName}`;
@@ -24,8 +28,15 @@ const entry = async (api: IApi) => {
   const snapshot = await snapshotManager.takeSnapshot();
 
   api.log.info('正在生成测试结果...');
-  const reports = await snapshotManager.diffSnapshotWithBaseline(snapshot);
-  console.log(genarateFormatReport(reports));
+  const { update } = args;
+  if (update) {
+    api.log.info('已更新基准快照！');
+  }
+  const reports = await snapshotManager.diffSnapshotWithBaseline(
+    snapshot,
+    update
+  );
+  formatReport(reports);
 
   await killDevServer();
 };

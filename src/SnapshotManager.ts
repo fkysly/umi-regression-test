@@ -265,11 +265,14 @@ export default class SnapshotManager {
     return reports;
   }
 
-  async diffSnapshotWithBaseline(targetSnapshot: Snapshot): Promise<Report[]> {
+  async diffSnapshotWithBaseline(
+    targetSnapshot: Snapshot,
+    update: boolean
+  ): Promise<Report[]> {
     const reports = await this.diffSnapshot(
       this._baselineSnapshot,
       targetSnapshot,
-      false
+      update
     );
 
     return reports;

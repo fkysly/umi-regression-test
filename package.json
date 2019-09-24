@@ -41,9 +41,12 @@
     "blink-diff": "^1.0.13",
     "chalk": "^2.4.2",
     "classnames": "^2.2.6",
+    "cli-table": "^0.3.1",
     "regenerator-runtime": "^0.13.3",
     "rimraf": "^3.0.0",
     "table": "^5.4.6",
-    "terminal-link": "^2.0.0"
+    "terminal-link": "^2.0.0",
+    "text-table": "^0.2.0",
+    "wcwidth": "^1.0.1"
   }
 }

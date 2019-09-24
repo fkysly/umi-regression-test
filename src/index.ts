@@ -4,6 +4,6 @@ import { IApi } from 'umi-types';
 
 export default function(api: IApi, options) {
   api.registerCommand('uitest', {}, async args => {
-    await entry(api);
+    await entry(api, args);
   });
 }
