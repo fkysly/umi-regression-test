@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import BlinkDiff from 'blink-diff';
 import { IRoute } from 'umi-types';
 import { Snapshot, ConfObj, Report } from './data';
@@ -10,10 +11,12 @@ import {
   writeJSONFile
 } from './util/helper';
 
+const BLANK_IMAGE_PATH = path.join(__dirname, './assets/blank.png');
+
 export default class SnapshotManager {
   private _devServerUrl: string;
   private _urtDir: string;
-  private _baselineSnapshot?: Snapshot;
+  private _baselineSnapshot: Snapshot;
   private _snapshots: Snapshot[];
   private _routes: IRoute[];
   private _conf: ConfObj;
@@ -23,8 +26,12 @@ export default class SnapshotManager {
     this._urtDir = urtDir;
     this._snapshots = [];
     this._routes = routes;
+    this._baselineSnapshot = {
+      id: -1,
+      screenshots: []
+    };
     this._conf = {
-      baselineSnapshotId: 0,
+      baselineSnapshotId: -1,
       snapshotIds: []
     };
   }
@@ -82,11 +89,7 @@ export default class SnapshotManager {
       })
     );
 
-    await this.writeSnapshot(snapshotDir, snapshot);
-
-    if (this._snapshots.length === 0) {
-      await this.setBaselineSnapshot(snapshot);
-    }
+    await this.writeSnapshotInfo(snapshotDir, snapshot);
 
     await this.addSnapshot(snapshot);
 
@@ -150,7 +153,7 @@ export default class SnapshotManager {
     return snapshot;
   }
 
-  async writeSnapshot(snapshotDir: string, snapshot: Snapshot) {
+  async writeSnapshotInfo(snapshotDir: string, snapshot: Snapshot) {
     const str = JSON.stringify(snapshot);
     const filePath = `${snapshotDir}/snapshotInfo.json`;
     await writeJSONFile(filePath, str);
@@ -185,12 +188,37 @@ export default class SnapshotManager {
   ): Promise<Report[]> {
     await this.clearDiffOutputDir();
     const diffOutputDir = await this.createDiffOutputDir();
-    const { screenshots } = sourceSnapshot;
+    const screenshots = [
+      ...new Set(
+        sourceSnapshot.screenshots
+          .map(screenshot => JSON.stringify(screenshot))
+          .concat(
+            targetSnapshot.screenshots.map(screenshot =>
+              JSON.stringify(screenshot)
+            )
+          )
+      )
+    ].map(str => JSON.parse(str));
+
+    const isExistInSnapshot = (routePath, snapshot) => {
+      const result = snapshot.screenshots.filter(
+        screenshot => screenshot.routePath === routePath
+      );
+      return result && result.length > 0;
+    };
 
     const tasks = screenshots.map(screenshot => {
       const { imageName, routePath } = screenshot;
-      const sourceImagePath = `${this._urtDir}/${sourceSnapshot.id}/${imageName}`;
-      const targetImagePath = `${this._urtDir}/${targetSnapshot.id}/${imageName}`;
+
+      const existInSource = isExistInSnapshot(routePath, sourceSnapshot);
+      const sourceImagePath = existInSource
+        ? `${this._urtDir}/${sourceSnapshot.id}/${imageName}`
+        : BLANK_IMAGE_PATH;
+
+      const existInTarget = isExistInSnapshot(routePath, targetSnapshot);
+      const targetImagePath = existInTarget
+        ? `${this._urtDir}/${targetSnapshot.id}/${imageName}`
+        : BLANK_IMAGE_PATH;
       const diffImagePath = `${diffOutputDir}/${imageName}`;
 
       const diff = new BlinkDiff({
@@ -241,7 +269,7 @@ export default class SnapshotManager {
     const reports = await this.diffSnapshot(
       this._baselineSnapshot,
       targetSnapshot,
-      true
+      false
     );
 
     return reports;

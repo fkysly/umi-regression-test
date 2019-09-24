@@ -10,8 +10,8 @@ const genarateFormatReport = (reports: Report[]): string => {
     const { isPass, diffImagePath, routePath, differences, dimension } = report;
     const diffImageLink = terminalLink('link', `file://${diffImagePath}`);
     const passText = isPass ? chalk.green('通过') : chalk.red('失败');
-    const percent = 1 - differences / dimension;
-    const percentString = `${(percent * 100).toFixed(0)}%`;
+    const percent = (dimension - differences) / dimension;
+    const percentString = `${(percent * 100).toFixed(2)}%`;
     const row = [passText, routePath, percentString];
     return row;
   });
@@ -28,7 +28,7 @@ const genarateFormatReport = (reports: Report[]): string => {
       },
       2: {
         alignment: 'left',
-        width: 5
+        width: 10
       }
       // 3: {
       //   alignment: 'left',

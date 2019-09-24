@@ -3,8 +3,12 @@ import styles from './index.css';
 export default function() {
   return (
     <div className={styles.normal}>
-      <h1>Page index12312312312</h1>
-      <p>1231231</p>
+      <h1>Hello World</h1>
+      <p>Diff</p>
+      <img
+        src="https://img.alicdn.com/tfs/TB12fuxfFT7gK0jSZFpXXaTkpXa-1190-70.jpg"
+        alt="taobao"
+      />
     </div>
   );
 }
