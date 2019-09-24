@@ -69,6 +69,11 @@ const formatReport = (reports: Report[]) => {
     return row;
   });
 
+  const passCount = reports.filter(report => report.isPass).length;
+
+  console.log(`${chalk.green('通过')}: ${passCount}/${reports.length}`);
+  console.log(`-------------------------------------`);
+
   console.log(
     table(headerRow.concat(bodyRows), {
       align: ['l', 'l', 'l', 'l'],
